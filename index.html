@@ -147,13 +147,70 @@
 
 
         fetch('https://mongoose-full-barely.ngrok-free.app/get_prompt', {
-            method: "GET"
+            method: "GET",
+            headers: new Headers({
+                "ngrok-skip-browser-warning": "1",
+            })
         }).then(res => {
             return res.json()
         }).then(data => {
+            console.log(data);
             document.querySelector('h4').innerText = data.prompt;
         });
 
+        function convertToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Handle the send button click
+        document.getElementById('send').addEventListener('click', async function() {
+            const text = textInput.value;
+            const fileInput = document.getElementById('myFile');
+            const file = fileInput.files[0];
+
+            if (!text || !file) {
+                alert("Please enter text and upload an image.");
+                return;
+            }
+
+            try {
+                const base64Image = await convertToBase64(file);
+                
+                const data = {
+                    text: text,
+                    image: base64Image,
+                    prompt: document.querySelector('h4').innerText
+                };
+
+                // Send POST request
+                fetch('https://mongoose-full-barely.ngrok-free.app/add_qr_response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "ngrok-skip-browser-warning": "1",
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Success:', result);
+                    location.reload();
+                    // Handle success (e.g., show a message to the user)
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An error occurred while sending the data.");
+                });
+            } catch (error) {
+                console.error("Error converting image to Base64:", error);
+                alert("An error occurred while converting the image.");
+            }
+        });
 
     </script>
 </body>
